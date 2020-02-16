@@ -20,29 +20,33 @@
     var CONFIG = {"hostname":"wanderag.github.io","root":"/","scheme":"Gemini","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
   </script>
 
-  <meta name="description" content="我的地盘我做主">
-<meta property="og:type" content="website">
-<meta property="og:title" content="独自徘徊">
-<meta property="og:url" content="https://wanderag.github.io/index.html">
+  <meta name="description" content="在locust测试脚本中，如果使用print方法打印消息，会发现实际是通过日志系统来打印，这引起了我的好奇，所以决定探究下locust的日志系统。 日志的配置Locust通过命令行参数设置日志。 --skip-log-setup：是否跳过初始化日志，默认否 --loglevel 或 -L：日志级别，默认INFO --logfile：日志文件路径，默认是标准输出 日志模块源码分析日志模块位于源文件夹">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Locust 日志模块">
+<meta property="og:url" content="https://wanderag.github.io/2020/02/16/locust-log/index.html">
 <meta property="og:site_name" content="独自徘徊">
-<meta property="og:description" content="我的地盘我做主">
+<meta property="og:description" content="在locust测试脚本中，如果使用print方法打印消息，会发现实际是通过日志系统来打印，这引起了我的好奇，所以决定探究下locust的日志系统。 日志的配置Locust通过命令行参数设置日志。 --skip-log-setup：是否跳过初始化日志，默认否 --loglevel 或 -L：日志级别，默认INFO --logfile：日志文件路径，默认是标准输出 日志模块源码分析日志模块位于源文件夹">
 <meta property="og:locale" content="zh_CH">
+<meta property="article:published_time" content="2020-02-16T01:33:10.000Z">
+<meta property="article:modified_time" content="2020-02-16T02:29:53.853Z">
 <meta property="article:author" content="独自徘徊">
+<meta property="article:tag" content="Locust">
+<meta property="article:tag" content="压力测试">
 <meta name="twitter:card" content="summary">
 
-<link rel="canonical" href="https://wanderag.github.io/">
+<link rel="canonical" href="https://wanderag.github.io/2020/02/16/locust-log/">
 
 
 <script id="page-configurations">
   // https://hexo.io/docs/variables.html
   CONFIG.page = {
     sidebar: "",
-    isHome: true,
-    isPost: false
+    isHome: false,
+    isPost: true
   };
 </script>
 
-  <title>独自徘徊</title>
+  <title>Locust 日志模块 | 独自徘徊</title>
   
 
 
@@ -138,10 +142,10 @@
             
 
   <div class="posts-expand">
-        
+      
   
   
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CH">
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CH">
     <link itemprop="mainEntityOfPage" href="https://wanderag.github.io/2020/02/16/locust-log/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -155,8 +159,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/02/16/locust-log/" class="post-title-link" itemprop="url">Locust 日志模块</a>
+          Locust 日志模块
         </h1>
 
         <div class="post-meta">
@@ -181,7 +184,7 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <p>在locust测试脚本中，如果使用print方法打印消息，会发现实际是通过日志系统来打印，这引起了我的好奇，所以决定探究下locust的日志系统。</p>
+        <p>在locust测试脚本中，如果使用print方法打印消息，会发现实际是通过日志系统来打印，这引起了我的好奇，所以决定探究下locust的日志系统。</p>
 <h3 id="日志的配置"><a href="#日志的配置" class="headerlink" title="日志的配置"></a>日志的配置</h3><p>Locust通过命令行参数设置日志。</p>
 <p><code>--skip-log-setup</code>：是否跳过初始化日志，默认否</p>
 <p><code>--loglevel 或 -L</code>：日志级别，默认INFO</p>
@@ -200,120 +203,54 @@
 
 <h3 id="Locust内部如何使用日志模块"><a href="#Locust内部如何使用日志模块" class="headerlink" title="Locust内部如何使用日志模块"></a>Locust内部如何使用日志模块</h3><p>一般情况，内部通过<code>logger = logging.getLogger(__name__)</code>获取logger来记录日志，只有记录统计数据时，直接引用了log模块的console_logger</p>
 
-      
     </div>
 
     
     
     
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>独自徘徊
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://wanderag.github.io/2020/02/16/locust-log/" title="Locust 日志模块">https://wanderag.github.io/2020/02/16/locust-log/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
       <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
+          <div class="post-tags">
+              <a href="/tags/Locust/" rel="tag"># Locust</a>
+              <a href="/tags/%E5%8E%8B%E5%8A%9B%E6%B5%8B%E8%AF%95/" rel="tag"># 压力测试</a>
+          </div>
 
         
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block home" lang="zh-CH">
-    <link itemprop="mainEntityOfPage" href="https://wanderag.github.io/2020/02/15/locust-introduce/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="独自徘徊">
-      <meta itemprop="description" content="我的地盘我做主">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="独自徘徊">
-    </span>
-      <header class="post-header">
-        <h1 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/02/15/locust-introduce/" class="post-title-link" itemprop="url">Locust简介</a>
-        </h1>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="fa fa-calendar-o"></i>
-              </span>
-              <span class="post-meta-item-text">发表于</span>
-              
-
-              <time title="创建时间：2020-02-15 13:33:10 / 修改时间：20:37:06" itemprop="dateCreated datePublished" datetime="2020-02-15T13:33:10+08:00">2020-02-15</time>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p><a href="https://locust.io/" target="_blank" rel="noopener">Locust</a>是一个开源压力测试工具，由python语言编写，支持Python3，压力生成器采用gevent协程的形式，可以提供很高的并发压力。</p>
-<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><p>可以通过pip的方式直接安装，locust支持的python版本包括 Python 3.6, 3.7 and 3.8。<strong>不支持python2</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install locust</span><br></pre></td></tr></table></figure>
-<h2 id="编写测试脚本"><a href="#编写测试脚本" class="headerlink" title="编写测试脚本"></a>编写测试脚本</h2><p>locust启动时需要指定脚本文件，脚本文件是一个标准python文件，样式如下</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> locust <span class="keyword">import</span> TaskSet, task, between</span><br><span class="line"><span class="keyword">from</span> locust.contrib.fasthttp <span class="keyword">import</span> FastHttpLocust</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test</span><span class="params">(TaskSet)</span>:</span></span><br><span class="line"><span class="meta">    @task(1)</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">test_01</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.client.get(<span class="string">"/"</span>)</span><br><span class="line">        </span><br><span class="line"><span class="meta">    @task(1)</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">test_02</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.client.get(<span class="string">"/search"</span>)</span><br><span class="line">        </span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">User</span><span class="params">(FastHttpLocust)</span>:</span></span><br><span class="line">    host = <span class="string">"https://baidu.com"</span></span><br><span class="line">    task_set = Test     <span class="comment"># 可以指定多个TaskSet类</span></span><br><span class="line">    wait_time = between(<span class="number">0</span>, <span class="number">0</span>)</span><br><span class="line">    weight = <span class="number">3</span>          <span class="comment"># 权重</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="TestSet"><a href="#TestSet" class="headerlink" title="TestSet"></a>TestSet</h3><p>任务集，定义了要执行的任务，@task使用可选的weight参数，该参数可用于指定任务的执行权重</p>
-<h3 id="Locust类"><a href="#Locust类" class="headerlink" title="Locust类"></a>Locust类</h3><p>每一个脚本必须含有继承自Locust的类，代表用户，Locust会为每个正在模拟的用户生成实例。脚本可以包含多个Locust类，可以启动时指定具体的类，如果不指定，会根据指定的权重随机选择。</p>
-<h4 id="task-set-属性"><a href="#task-set-属性" class="headerlink" title="task_set 属性"></a>task_set 属性</h4><p>每个Locust类必须设置task_set属性，指向定义用户行为的TaskSet</p>
-<h4 id="wait-time-属性"><a href="#wait-time-属性" class="headerlink" title="wait_time 属性"></a>wait_time 属性</h4><p>它用于确定模拟用户在每个执行的任务(<strong>@task标注的方法</strong>)之间等待多长时间</p>
-<h3 id="事件"><a href="#事件" class="headerlink" title="事件"></a>事件</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test2</span><span class="params">(TaskSet)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">setup</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">on_start</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">on_stop</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">teardown</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="meta">    @task</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">test_01</span><span class="params">(self)</span>:</span></span><br><span class="line">        print(<span class="string">"run"</span>)</span><br><span class="line">        self.client.get(<span class="string">"/"</span>)</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Teacher</span><span class="params">(FastHttpLocust)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">setup</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">teardown</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
 
 
-
-<p>事件顺序</p>
-<ol>
-<li>Locust setup (once) 每个Locust类执行一次</li>
-<li>TaskSet setup (once)每个TaskSet类执行一次</li>
-<li>TaskSet on_start (once per locust) 每个并发用户执行一次</li>
-<li>TaskSet tasks…</li>
-<li>TaskSet on_stop (once per locust)</li>
-<li>TaskSet teardown (once)</li>
-<li>Locust teardown (once)</li>
-</ol>
-<h2 id="单机运行"><a href="#单机运行" class="headerlink" title="单机运行"></a>单机运行</h2><h3 id="Web方式"><a href="#Web方式" class="headerlink" title="Web方式"></a>Web方式</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">locust -f demo.py</span><br></pre></td></tr></table></figure>
-
-<p>这种会启动一个web，默认端口8089。在界面设置总并发用户数，和每秒用户数</p>
-<h3 id="非Web"><a href="#非Web" class="headerlink" title="非Web"></a>非Web</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">locust -f demo.py --no-web -c 2 -r 1 -t 5s</span><br></pre></td></tr></table></figure>
-
-<p>这种方式启动就没有web界面，</p>
-<p>-c：总并发用户数</p>
-<p>-r：每秒增长用户数</p>
-<p>-t：持续时间</p>
-<h2 id="集群方式运行"><a href="#集群方式运行" class="headerlink" title="集群方式运行"></a>集群方式运行</h2><h3 id="Master节点"><a href="#Master节点" class="headerlink" title="Master节点"></a>Master节点</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">locust -f demo.py 20s --master</span><br></pre></td></tr></table></figure>
-
-<p>也可以启动非web模式的master节点</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">locust -f demo.py --no-web -c 1000 -r 00 -t 30s --master</span><br></pre></td></tr></table></figure>
-
-<h3 id="Slave节点"><a href="#Slave节点" class="headerlink" title="Slave节点"></a>Slave节点</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">locust -f demo.py  --slave --master-host 127.0.0.1</span><br></pre></td></tr></table></figure>
-      
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/02/15/locust-introduce/" rel="prev" title="Locust简介">
+      <i class="fa fa-chevron-left"></i> Locust简介
+    </a></div>
+      <div class="post-nav-item"></div>
     </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
       </footer>
+    
   </article>
   
   
   
 
   </div>
-
-  
-
 
 
           </div>
@@ -364,6 +301,7 @@
 
       <!--noindex-->
       <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#日志的配置"><span class="nav-number">1.</span> <span class="nav-text">日志的配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#日志模块源码分析"><span class="nav-number">2.</span> <span class="nav-text">日志模块源码分析</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Locust内部如何使用日志模块"><span class="nav-number">3.</span> <span class="nav-text">Locust内部如何使用日志模块</span></a></li></ol></div>
       </div>
       <!--/noindex-->
 
