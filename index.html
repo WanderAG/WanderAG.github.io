@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
 <meta name="theme-color" content="#222">
 <meta name="generator" content="Hexo 4.2.0">
-  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
-  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
-  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
-  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png">
+  <link rel="mask-icon" href="/images/favicon.png" color="#222">
 
 <link rel="stylesheet" href="/css/main.css">
 
@@ -167,7 +167,7 @@
               <span class="post-meta-item-text">发表于</span>
               
 
-              <time title="创建时间：2020-02-16 09:33:10 / 修改时间：10:31:06" itemprop="dateCreated datePublished" datetime="2020-02-16T09:33:10+08:00">2020-02-16</time>
+              <time title="创建时间：2020-02-16 09:33:10 / 修改时间：11:14:36" itemprop="dateCreated datePublished" datetime="2020-02-16T09:33:10+08:00">2020-02-16</time>
             </span>
 
           
@@ -182,24 +182,14 @@
 
       
           <p>在Locust测试脚本中，如果使用print方法打印消息，会发现实际是通过日志系统来打印，这引起了我的好奇，所以决定探究下locust的日志系统。</p>
-<h3 id="日志的配置"><a href="#日志的配置" class="headerlink" title="日志的配置"></a>日志的配置</h3><p>Locust通过命令行参数设置日志。</p>
-<p><code>--skip-log-setup</code>：是否跳过初始化日志，默认否</p>
-<p><code>--loglevel 或 -L</code>：日志级别，默认INFO</p>
-<p><code>--logfile</code>：日志文件路径，默认是标准输出</p>
-<h3 id="日志模块源码分析"><a href="#日志模块源码分析" class="headerlink" title="日志模块源码分析"></a>日志模块源码分析</h3><p>日志模块位于源文件夹下的log.py文件，提供<code>def setup_logging(loglevel, logfile)</code>的初始化方法，内部使用<code>logging.basicConfig</code>方法配置了Python标准日志模块logging</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">setup_logging</span><span class="params">(loglevel, logfile)</span>:</span></span><br><span class="line">    numeric_level = getattr(logging, loglevel.upper(), <span class="literal">None</span>)</span><br><span class="line">    <span class="keyword">if</span> numeric_level <span class="keyword">is</span> <span class="literal">None</span>:</span><br><span class="line">        <span class="keyword">raise</span> ValueError(<span class="string">"Invalid log level: %s"</span> % loglevel)</span><br><span class="line"></span><br><span class="line">    log_format = <span class="string">"[%(asctime)s] &#123;0&#125;/%(levelname)s/%(name)s: %(message)s"</span>.format(host)</span><br><span class="line">    logging.basicConfig(level=numeric_level, filename=logfile, format=log_format)</span><br><span class="line"></span><br><span class="line">    sys.stderr = StdErrWrapper()</span><br><span class="line">    sys.stdout = StdOutWrapper()</span><br></pre></td></tr></table></figure>
-
-<p>其中值得注意的是<code>sys.stderr = StdErrWrapper()</code>和<code>sys.stdout = StdOutWrapper()</code>，日志模块重定向了标准输出和错误输出到Wrapper类，Wrapper大致如下：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">stdout_logger = logging.getLogger(<span class="string">"stdout"</span>)</span><br><span class="line">stderr_logger = logging.getLogger(<span class="string">"stderr"</span>)</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">StdOutWrapper</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Wrapper for stdout</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">write</span><span class="params">(self, s)</span>:</span></span><br><span class="line">        stdout_logger.info(s.strip())</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">isatty</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">flush</span><span class="params">(self, *args, **kwargs)</span>:</span></span><br><span class="line">        <span class="string">"""No-op for wrapper"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">StdErrWrapper</span><span class="params">(object)</span>:</span></span><br><span class="line">    <span class="string">"""</span></span><br><span class="line"><span class="string">    Wrapper for stderr</span></span><br><span class="line"><span class="string">    """</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">write</span><span class="params">(self, s)</span>:</span></span><br><span class="line">        stderr_logger.error(s.strip())</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">isatty</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">return</span> <span class="literal">False</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">flush</span><span class="params">(self, *args, **kwargs)</span>:</span></span><br><span class="line">        <span class="string">"""No-op for wrapper"""</span></span><br><span class="line">        <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
-
-<p>标准输出的write方法重定向到了名为<code>stdout</code>的logger对象的info方法，标准错误输出重定向到了名为<code>stderr</code>的logger对象的error方法，这也文章开头提到的，使用print方法打印消息，实际却是使用了日志系统的原因。</p>
-<p>除此之外，日志模块还单独定义了<code>console_logger</code>和<code>requests_log</code>两个logger</p>
-<p>console_logger用于记录统计数据，只打印message信息，没有其他格式，也不冒泡，所以通过命令行参数设置的日志文件对它<strong>不生效</strong>，</p>
-<p>requests_logt提高了日志记录级别为<code>WARNING</code>，应为内部默认使用requests模块进行http请求，提高日志级别有助于减少日志量，提高性能</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># set up logger for the statistics tables</span></span><br><span class="line">console_logger = logging.getLogger(<span class="string">"console_logger"</span>)</span><br><span class="line"><span class="comment"># create console handler</span></span><br><span class="line">sh = logging.StreamHandler()</span><br><span class="line">sh.setLevel(logging.INFO)</span><br><span class="line"><span class="comment"># formatter that doesn't include anything but the message</span></span><br><span class="line">sh.setFormatter(logging.Formatter(<span class="string">'%(message)s'</span>))</span><br><span class="line">console_logger.addHandler(sh)</span><br><span class="line"><span class="comment"># 不冒泡</span></span><br><span class="line">console_logger.propagate = <span class="literal">False</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># configure python-requests log level</span></span><br><span class="line">requests_log = logging.getLogger(<span class="string">"requests"</span>)</span><br><span class="line">requests_log.setLevel(logging.WARNING)</span><br></pre></td></tr></table></figure>
-
-<h3 id="Locust内部如何使用日志模块"><a href="#Locust内部如何使用日志模块" class="headerlink" title="Locust内部如何使用日志模块"></a>Locust内部如何使用日志模块</h3><p>一般情况，内部通过<code>logger = logging.getLogger(__name__)</code>获取logger来记录日志，只有记录统计数据时，直接引用了log模块的console_logger</p>
-
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/02/16/locust-log/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
@@ -241,10 +231,16 @@
                 <i class="fa fa-calendar-o"></i>
               </span>
               <span class="post-meta-item-text">发表于</span>
-              
 
-              <time title="创建时间：2020-02-15 13:33:10 / 修改时间：20:37:06" itemprop="dateCreated datePublished" datetime="2020-02-15T13:33:10+08:00">2020-02-15</time>
+              <time title="创建时间：2020-02-15 13:33:10" itemprop="dateCreated datePublished" datetime="2020-02-15T13:33:10+08:00">2020-02-15</time>
             </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-calendar-check-o"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-02-16 11:15:31" itemprop="dateModified" datetime="2020-02-16T11:15:31+08:00">2020-02-16</time>
+              </span>
 
           
 
@@ -258,44 +254,14 @@
 
       
           <p><a href="https://locust.io/" target="_blank" rel="noopener">Locust</a>是一个开源压力测试工具，由python语言编写，支持Python3，压力生成器采用gevent协程的形式，可以提供很高的并发压力。</p>
-<h2 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h2><p>可以通过pip的方式直接安装，locust支持的python版本包括 Python 3.6, 3.7 and 3.8。<strong>不支持python2</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pip install locust</span><br></pre></td></tr></table></figure>
-<h2 id="编写测试脚本"><a href="#编写测试脚本" class="headerlink" title="编写测试脚本"></a>编写测试脚本</h2><p>locust启动时需要指定脚本文件，脚本文件是一个标准python文件，样式如下</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">from</span> locust <span class="keyword">import</span> TaskSet, task, between</span><br><span class="line"><span class="keyword">from</span> locust.contrib.fasthttp <span class="keyword">import</span> FastHttpLocust</span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test</span><span class="params">(TaskSet)</span>:</span></span><br><span class="line"><span class="meta">    @task(1)</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">test_01</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.client.get(<span class="string">"/"</span>)</span><br><span class="line">        </span><br><span class="line"><span class="meta">    @task(1)</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">test_02</span><span class="params">(self)</span>:</span></span><br><span class="line">        self.client.get(<span class="string">"/search"</span>)</span><br><span class="line">        </span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">User</span><span class="params">(FastHttpLocust)</span>:</span></span><br><span class="line">    host = <span class="string">"https://baidu.com"</span></span><br><span class="line">    task_set = Test     <span class="comment"># 可以指定多个TaskSet类</span></span><br><span class="line">    wait_time = between(<span class="number">0</span>, <span class="number">0</span>)</span><br><span class="line">    weight = <span class="number">3</span>          <span class="comment"># 权重</span></span><br><span class="line"></span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
-
-<h3 id="TestSet"><a href="#TestSet" class="headerlink" title="TestSet"></a>TestSet</h3><p>任务集，定义了要执行的任务，@task使用可选的weight参数，该参数可用于指定任务的执行权重</p>
-<h3 id="Locust类"><a href="#Locust类" class="headerlink" title="Locust类"></a>Locust类</h3><p>每一个脚本必须含有继承自Locust的类，代表用户，Locust会为每个正在模拟的用户生成实例。脚本可以包含多个Locust类，可以启动时指定具体的类，如果不指定，会根据指定的权重随机选择。</p>
-<h4 id="task-set-属性"><a href="#task-set-属性" class="headerlink" title="task_set 属性"></a>task_set 属性</h4><p>每个Locust类必须设置task_set属性，指向定义用户行为的TaskSet</p>
-<h4 id="wait-time-属性"><a href="#wait-time-属性" class="headerlink" title="wait_time 属性"></a>wait_time 属性</h4><p>它用于确定模拟用户在每个执行的任务(<strong>@task标注的方法</strong>)之间等待多长时间</p>
-<h3 id="事件"><a href="#事件" class="headerlink" title="事件"></a>事件</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Test2</span><span class="params">(TaskSet)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">setup</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">on_start</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">on_stop</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">teardown</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line"><span class="meta">    @task</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">test_01</span><span class="params">(self)</span>:</span></span><br><span class="line">        print(<span class="string">"run"</span>)</span><br><span class="line">        self.client.get(<span class="string">"/"</span>)</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Teacher</span><span class="params">(FastHttpLocust)</span>:</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">setup</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">teardown</span><span class="params">(self)</span>:</span></span><br><span class="line">        <span class="keyword">pass</span></span><br></pre></td></tr></table></figure>
-
-
-
-<p>事件顺序</p>
-<ol>
-<li>Locust setup (once) 每个Locust类执行一次</li>
-<li>TaskSet setup (once)每个TaskSet类执行一次</li>
-<li>TaskSet on_start (once per locust) 每个并发用户执行一次</li>
-<li>TaskSet tasks…</li>
-<li>TaskSet on_stop (once per locust)</li>
-<li>TaskSet teardown (once)</li>
-<li>Locust teardown (once)</li>
-</ol>
-<h2 id="单机运行"><a href="#单机运行" class="headerlink" title="单机运行"></a>单机运行</h2><h3 id="Web方式"><a href="#Web方式" class="headerlink" title="Web方式"></a>Web方式</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">locust -f demo.py</span><br></pre></td></tr></table></figure>
-
-<p>这种会启动一个web，默认端口8089。在界面设置总并发用户数，和每秒用户数</p>
-<h3 id="非Web"><a href="#非Web" class="headerlink" title="非Web"></a>非Web</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">locust -f demo.py --no-web -c 2 -r 1 -t 5s</span><br></pre></td></tr></table></figure>
-
-<p>这种方式启动就没有web界面，</p>
-<p>-c：总并发用户数</p>
-<p>-r：每秒增长用户数</p>
-<p>-t：持续时间</p>
-<h2 id="集群方式运行"><a href="#集群方式运行" class="headerlink" title="集群方式运行"></a>集群方式运行</h2><h3 id="Master节点"><a href="#Master节点" class="headerlink" title="Master节点"></a>Master节点</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">locust -f demo.py 20s --master</span><br></pre></td></tr></table></figure>
-
-<p>也可以启动非web模式的master节点</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">locust -f demo.py --no-web -c 1000 -r 00 -t 30s --master</span><br></pre></td></tr></table></figure>
-
-<h3 id="Slave节点"><a href="#Slave节点" class="headerlink" title="Slave节点"></a>Slave节点</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">locust -f demo.py  --slave --master-host 127.0.0.1</span><br></pre></td></tr></table></figure>
+          <!--noindex-->
+            <div class="post-button">
+              <a class="btn" href="/2020/02/15/locust-introduce/#more" rel="contents">
+                阅读全文 &raquo;
+              </a>
+            </div>
+          <!--/noindex-->
+        
       
     </div>
 
