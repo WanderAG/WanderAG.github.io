@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh-CH">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon.png">
+  <link rel="mask-icon" href="/images/favicon.png" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/font-awesome.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"wanderag.github.io","root":"/","scheme":"Gemini","version":"7.7.1","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":true,"show_result":true,"style":null},"back2top":{"enable":true,"sidebar":true,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="本文从源码角度，解析Locust启动运行的流程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Locust 执行流程">
+<meta property="og:url" content="https://wanderag.github.io/2020/02/18/locust-flow/index.html">
+<meta property="og:site_name" content="独自徘徊">
+<meta property="og:description" content="本文从源码角度，解析Locust启动运行的流程">
+<meta property="og:locale" content="zh_CH">
+<meta property="og:image" content="https://s2.ax1x.com/2020/02/18/3F4K5F.png">
+<meta property="article:published_time" content="2020-02-18T06:26:12.000Z">
+<meta property="article:modified_time" content="2020-02-18T10:10:12.710Z">
+<meta property="article:author" content="独自徘徊">
+<meta property="article:tag" content="Locust">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://s2.ax1x.com/2020/02/18/3F4K5F.png">
+
+<link rel="canonical" href="https://wanderag.github.io/2020/02/18/locust-flow/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome: false,
+    isPost: true
+  };
+</script>
+
+  <title>Locust 执行流程 | 独自徘徊</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <div>
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">独自徘徊</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+        <p class="site-subtitle">手持两把锟斤拷    口中疾呼烫烫烫</p>
+  </div>
+
+  <div class="site-nav-right"></div>
+</div>
+
+
+<nav class="site-nav">
+  
+  <ul id="menu" class="menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-fw fa-home"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-fw fa-archive"></i>归档</a>
+
+  </li>
+  </ul>
+
+</nav>
+</div>
+    </header>
+
+    
+
+  <a href="https://github.com/WanderAG" class="github-corner" title="Follow me on GitHub" aria-label="Follow me on GitHub" rel="noopener" target="_blank"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path></svg></a>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content">
+            
+
+  <div class="posts-expand">
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block " lang="zh-CH">
+    <link itemprop="mainEntityOfPage" href="https://wanderag.github.io/2020/02/18/locust-flow/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="独自徘徊">
+      <meta itemprop="description" content="我的地盘我做主">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="独自徘徊">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Locust 执行流程
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+              
+
+              <time title="创建时间：2020-02-18 14:26:12 / 修改时间：18:10:12" itemprop="dateCreated datePublished" datetime="2020-02-18T14:26:12+08:00">2020-02-18</time>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <p>本文从源码角度，解析Locust启动运行的流程</p>
+<a id="more"></a>
+
+<h3 id="程序入口"><a href="#程序入口" class="headerlink" title="程序入口"></a>程序入口</h3><p>通过<code>pip install locust</code>命令安装Locust之后，就可以在终端执行Locust命令，执行 <code>which locust</code>，可以找到Locust的启动脚本，我是通过virtualenv的虚拟环境来安装的，具体路径如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"> <span class="built_in">which</span> locust                                                      </span><br><span class="line">/Users/michealyan/PycharmProjects/locust-test/.venv/bin/locust</span><br></pre></td></tr></table></figure>
+
+<p>脚本内容如下：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># -*- coding: utf-8 -*-</span></span><br><span class="line"><span class="keyword">import</span> re</span><br><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"></span><br><span class="line"><span class="keyword">from</span> locust.main <span class="keyword">import</span> main</span><br><span class="line"></span><br><span class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</span><br><span class="line">    sys.argv[<span class="number">0</span>] = re.sub(<span class="string">r'(-script\.pyw?|\.exe)?$'</span>, <span class="string">''</span>, sys.argv[<span class="number">0</span>])</span><br><span class="line">    sys.exit(main())</span><br></pre></td></tr></table></figure>
+
+<p>可以看到，实际程序的入口是<code>locust.main</code>模块下的<code>main</code>方法</p>
+<h3 id="main-方法流程图"><a href="#main-方法流程图" class="headerlink" title="main()方法流程图"></a>main()方法流程图</h3><p><img src="https://s2.ax1x.com/2020/02/18/3F4K5F.png" alt="流程图"></p>
+<p>main根据不同的启动方式，实例化不同的Runner对象，保存在<code>runners.locust_runner</code>如果是web模式，则会先启动一个web server，之后根据用户的输入参数，启动runner。非web模式，包括slave模式，会直接运行runner，不会启动web server</p>
+<h3 id="Runner流程"><a href="#Runner流程" class="headerlink" title="Runner流程"></a>Runner流程</h3><p>Runner.run主要工作为启动指定数量的VUser（Locust实例），根据权重，随机选择Locust类。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">spawn_locusts</span><span class="params">(self, spawn_count, wait=False)</span>:</span></span><br><span class="line">    bucket = self.weight_locusts(spawn_count)</span><br><span class="line">    spawn_count = len(bucket)</span><br><span class="line">    <span class="keyword">if</span> self.state == STATE_INIT <span class="keyword">or</span> self.state == STATE_STOPPED:</span><br><span class="line">        self.state = STATE_HATCHING</span><br><span class="line"></span><br><span class="line">    existing_count = len(self.locusts)</span><br><span class="line">    logger.info(<span class="string">"Hatching and swarming %i users at the rate %g users/s (%i users already running)..."</span> % (</span><br><span class="line">        spawn_count, self.hatch_rate, existing_count))</span><br><span class="line">    occurrence_count = dict([(l.__name__, <span class="number">0</span>) <span class="keyword">for</span> l <span class="keyword">in</span> self.locust_classes])</span><br></pre></td></tr></table></figure>
+
+<p>其中bucket的长度等于用户指定的并发用户数，每个item就是一个Locust类，根据权重不同，包含的数量不同，例如有两个Locust类，LocustA和LocustB，权重分别是3:7，指定并发100个用户，那么bucket里面就有30个LocustA，70个LocustB。</p>
+<p>随后通过<code>random.randint(0, len(bucket) - 1)</code>随机POP一个Locust类并实例化，通过gevent的group，由协程调度Locust类的run方法正式进入测试流程</p>
+<h3 id="Locust类初始化"><a href="#Locust类初始化" class="headerlink" title="Locust类初始化"></a>Locust类初始化</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self, parent)</span>:</span></span><br><span class="line">    super(Locust, self).__init__()</span><br><span class="line">    <span class="comment"># check if deprecated wait API is used</span></span><br><span class="line">    deprecation.check_for_deprecated_wait_api(self)</span><br><span class="line">    </span><br><span class="line">    <span class="comment"># 加锁，每个类执行一次</span></span><br><span class="line">    <span class="keyword">with</span> self._lock:</span><br><span class="line">        <span class="keyword">if</span> hasattr(self, <span class="string">"setup"</span>) <span class="keyword">and</span> self._setup_has_run <span class="keyword">is</span> <span class="literal">False</span>:</span><br><span class="line">            self._set_setup_flag()</span><br><span class="line">            <span class="keyword">try</span>:</span><br><span class="line">                self.setup()</span><br><span class="line">            <span class="keyword">except</span> Exception <span class="keyword">as</span> e:</span><br><span class="line">                events.locust_error.fire(locust_instance=self, exception=e, tb=sys.exc_info()[<span class="number">2</span>])</span><br><span class="line">                logger.error(<span class="string">"%s\n%s"</span>, e, traceback.format_exc())</span><br><span class="line">        <span class="keyword">if</span> hasattr(self, <span class="string">"teardown"</span>) <span class="keyword">and</span> self._teardown_is_set <span class="keyword">is</span> <span class="literal">False</span>:</span><br><span class="line">            self._set_teardown_flag()</span><br><span class="line">            events.quitting += self.teardown</span><br></pre></td></tr></table></figure>
+
+<p>如果Locust类定义了setup，那么在初始化之后会执行setup操作</p>
+<blockquote>
+<p>注意：每个Locust类只会执行一次setup和teardown操作，通过<code>gevent.lock.Semaphore()</code> 来保证是协程安全的</p>
+</blockquote>
+<p>Locust提供的HttpLocust类还会进行初始化Session等操作</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">HttpLocust</span><span class="params">(Locust)</span>:</span></span><br><span class="line">    client = <span class="literal">None</span></span><br><span class="line">    trust_env = <span class="literal">False</span></span><br><span class="line">    <span class="function"><span class="keyword">def</span> <span class="title">__init__</span><span class="params">(self)</span>:</span></span><br><span class="line">        super(HttpLocust, self).__init__()</span><br><span class="line">       </span><br><span class="line">        session = HttpSession(base_url=self.host)</span><br><span class="line">        session.trust_env = self.trust_env</span><br><span class="line">        self.client = session</span><br></pre></td></tr></table></figure>
+
+<h3 id="Locust-run"><a href="#Locust-run" class="headerlink" title="Locust.run()"></a>Locust.run()</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="keyword">def</span> <span class="title">run</span><span class="params">(self, runner=None)</span>:</span></span><br><span class="line">    task_set_instance = self.task_set(self)</span><br><span class="line">    <span class="keyword">try</span>:</span><br><span class="line">        task_set_instance.run()</span><br><span class="line">    <span class="keyword">except</span> StopLocust:</span><br><span class="line">        <span class="keyword">pass</span></span><br><span class="line">    <span class="keyword">except</span> (RescheduleTask, RescheduleTaskImmediately) <span class="keyword">as</span> e:</span><br><span class="line">        <span class="keyword">raise</span> LocustError</span><br><span class="line">    <span class="keyword">except</span> GreenletExit <span class="keyword">as</span> e:</span><br><span class="line">        <span class="keyword">if</span> runner:</span><br><span class="line">            runner.state = STATE_CLEANUP</span><br><span class="line">        <span class="comment"># Run the task_set on_stop method, if it has one</span></span><br><span class="line">        <span class="keyword">if</span> hasattr(task_set_instance, <span class="string">"on_stop"</span>):</span><br><span class="line">            task_set_instance.on_stop()</span><br><span class="line">        <span class="keyword">raise</span>  <span class="comment"># Maybe something relies on this except being raised?</span></span><br></pre></td></tr></table></figure>
+
+<p>初始化task_set，每个TaskSet类，只会执行一次setup和teardown操作，原理和Locust相同，但是每个并发用户会执行一次on_start和on_stop操作</p>
+<p>接着调用TaskSet.run来执行所有任务，首先检测是否有on_start方法，如果有会执行，方法结束时会执行on_stop方法，每个并发用户都会执行一次on_start和on_stop方法。</p>
+<p>执行完on_start方法之后会进入<code>while True</code>循环，循环内部每次获取一个任务并执行，直到时间结束或者主动中断(Ctrl+C)</p>
+<p>自获取执行任务时有两种方式，一种随机，一种顺序，取决于定义任务的方式，同时随机任务也可以设置权重，随机的方式和Locsut类一样。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>至此Locust的整个运行流程就分析完了，通过分析代码可知，用户是并发的，但是实际每个用户的任务请求是串行执行的，这一点需要注意。</p>
+<p>参考资料：</p>
+
+    </div>
+
+    
+    
+    
+        
+
+<div>
+<ul class="post-copyright">
+  <li class="post-copyright-author">
+    <strong>本文作者： </strong>独自徘徊
+  </li>
+  <li class="post-copyright-link">
+    <strong>本文链接：</strong>
+    <a href="https://wanderag.github.io/2020/02/18/locust-flow/" title="Locust 执行流程">https://wanderag.github.io/2020/02/18/locust-flow/</a>
+  </li>
+  <li class="post-copyright-license">
+    <strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" rel="noopener" target="_blank"><i class="fa fa-fw fa-creative-commons"></i>BY-NC-SA</a> 许可协议。转载请注明出处！
+  </li>
+</ul>
+</div>
+
+
+      <footer class="post-footer">
+          
+          <div class="post-tags">
+              <a href="/tags/Locust/" rel="tag"><i class="fa fa-tag"></i> Locust</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/02/17/locust-event/" rel="prev" title="Locust事件处理">
+      <i class="fa fa-chevron-left"></i> Locust事件处理
+    </a></div>
+      <div class="post-nav-item"></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+  </div>
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let activeClass = CONFIG.comments.activeClass;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#程序入口"><span class="nav-number">1.</span> <span class="nav-text">程序入口</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#main-方法流程图"><span class="nav-number">2.</span> <span class="nav-text">main()方法流程图</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Runner流程"><span class="nav-number">3.</span> <span class="nav-text">Runner流程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Locust类初始化"><span class="nav-number">4.</span> <span class="nav-text">Locust类初始化</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Locust-run"><span class="nav-number">5.</span> <span class="nav-text">Locust.run()</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#小结"><span class="nav-number">6.</span> <span class="nav-text">小结</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">独自徘徊</p>
+  <div class="site-description" itemprop="description">我的地盘我做主</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-tags">
+        <span class="site-state-item-count">5</span>
+        <span class="site-state-item-name">标签</span>
+      </div>
+  </nav>
+</div>
+  <div class="cc-license motion-element" itemprop="license">
+    <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh" class="cc-opacity" rel="noopener" target="_blank"><img src="/images/cc-by-nc-sa.svg" alt="Creative Commons"></a>
+  </div>
+
+
+
+      </div>
+        <div class="back-to-top motion-element">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">独自徘徊</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> 强力驱动 v4.2.0
+  </div>
+  <span class="post-meta-divider">|</span>
+  <div class="theme-info">主题 – <a href="https://theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> v7.7.1
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>
